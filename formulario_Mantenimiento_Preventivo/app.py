@@ -86,10 +86,31 @@ obs_style = ParagraphStyle(
 
 col1, col2, col3 = st.columns([1, 3, 1])
 with col2:
-    if os.path.exists("logo_claro.png"):
-        st.image("logo_claro.png", width=180)
-    else:
-        st.warning("⚠️ No se encontró el archivo logo_claro.png")
+    # ================================
+# RUTAS DE IMÁGENES
+# ================================
+ from pathlib import Path
+
+BASE_DIR = Path(__file__).parent
+
+logo_path = BASE_DIR / "logo_claro.png"
+uso_interno_path = BASE_DIR / "uso_interno.png"
+banner_path = BASE_DIR / "img.png"
+icono_path = BASE_DIR / "icono.ico.png"
+
+# Configuración de página con ícono
+st.set_page_config(
+    page_title="Mantenimiento Preventivo",
+    page_icon=str(icono_path) if icono_path.exists() else None,
+    layout="wide"
+)
+
+# Mostrar logo
+if logo_path.exists():
+    st.image(str(logo_path), width=180)
+else:
+    st.warning("⚠️ No se encontró el archivo logo_claro.png")
+
 
 st.markdown("""
     <h1 style='text-align:center; color:#004080;'>🧰 FORMATO DE MANTENIMIENTO PREVENTIVO</h1>
