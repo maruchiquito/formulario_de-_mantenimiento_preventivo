@@ -4,7 +4,6 @@ import streamlit as st
 from datetime import datetime
 import json
 from datetime import date, datetime
-
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -90,6 +89,8 @@ with col2:
 # RUTAS DE IMÁGENES
 # ================================
  from pathlib import Path
+
+
 
 BASE_DIR = Path(__file__).parent
 
@@ -1257,9 +1258,91 @@ def adaptar_datos_microondas(microondas):
     return data
 
 
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.platypus import (
+    BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer
+)
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Image as RLImage
+from pathlib import Path
+import os
+
+styles = getSampleStyleSheet()
+
+# ============================================================
+# 🧠 ENCABEZADO (CON IMÁGENES)
+# ============================================================
+def header_canvas(canvas, doc):
+    canvas.saveState()
+    width, height = A4
+
+    # 📁 Rutas absolutas (funcionan en local y en Streamlit Cloud)
+    base_dir = Path(__file__).parent
+    logo_path = base_dir / "logo_claro.png"
+    uso_interno_path = base_dir / "uso_interno.png"
+
+    # 🖼️ Logo Claro
+    if logo_path.exists():
+        try:
+            canvas.drawImage(
+                str(logo_path),
+                50, height - 70,
+                width=100,
+                height=60,
+                preserveAspectRatio=True,
+                mask='auto'
+            )
+        except Exception as e:
+            print("⚠️ Error cargando logo:", e)
+            canvas.setFont("Helvetica-Bold", 10)
+            canvas.drawString(30, height - 40, "LOGO CLARO")
+    else:
+        canvas.setFont("Helvetica-Bold", 10)
+        canvas.drawString(30, height - 40, "LOGO CLARO")
+
+    # 🧾 Título central
+    canvas.setFont("Helvetica-Bold", 14)
+    canvas.drawCentredString(width / 2, height - 40, "FORMATO DE MANTENIMIENTO PREVENTIVO")
+    canvas.setFont("Helvetica-Bold", 11)
+    canvas.drawCentredString(width / 2, height - 55, "ACCESO")
+    canvas.setFont("Helvetica", 9)
+    canvas.drawCentredString(width / 2, height - 70, "OT / Registro")
+
+    # 🧱 Franja "USO INTERNO"
+    if uso_interno_path.exists():
+        try:
+            canvas.drawImage(
+                str(uso_interno_path),
+                20, height - 100,
+                width=width - 30,
+                height=30,
+                preserveAspectRatio=False,
+                mask='auto'
+            )
+        except Exception as e:
+            print("⚠️ Error cargando uso_interno:", e)
+            canvas.setFillColorRGB(0.9, 0.9, 0.9)
+            canvas.rect(15, height - 100, width - 30, 20, fill=1, stroke=0)
+            canvas.setFillColorRGB(0, 0, 0)
+            canvas.setFont("Helvetica", 8)
+            canvas.drawCentredString(width / 2, height - 95, "USO INTERNO")
+    else:
+        canvas.setFillColorRGB(0.9, 0.9, 0.9)
+        canvas.rect(15, height - 100, width - 30, 20, fill=1, stroke=0)
+        canvas.setFillColorRGB(0, 0, 0)
+        canvas.setFont("Helvetica", 8)
+        canvas.drawCentredString(width / 2, height - 95, "USO INTERNO")
+
+    canvas.restoreState()
+
+# ============================================================
+# 📄 GENERACIÓN DEL PDF COMPLETO
+# ============================================================
 def generar_pdf_completo(datos, output_filename="formato_mantenimiento.pdf"):
     from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate
 
+    # 📋 Documento base
     doc = BaseDocTemplate(
         output_filename,
         pagesize=A4,
@@ -1269,13 +1352,16 @@ def generar_pdf_completo(datos, output_filename="formato_mantenimiento.pdf"):
         bottomMargin=18
     )
 
+    # 🧱 Marco de contenido
     frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id="normal")
+
+    # 🧩 Plantilla con encabezado
     template = PageTemplate(id="header_template", frames=frame, onPage=header_canvas)
     doc.addPageTemplates([template])
 
     story = []
 
-    
+    # 🔹 Función auxiliar para agregar bloques al PDF
     def add_block(block):
         if block is None:
             return
@@ -1283,18 +1369,18 @@ def generar_pdf_completo(datos, output_filename="formato_mantenimiento.pdf"):
             story.extend(block)
         else:
             story.append(block)
-        
         story.append(Spacer(1, 6))
 
+    # 🧱 Secciones del PDF
     add_block(bloque_informacion_general(datos.get("general", {})))
     add_block(bloque_actividades_pdf(datos.get("actividades", {})))
     add_block(bloque_tdg_pdf(datos.get("tdg", {})))
     add_block(bloque_spt_pdf(datos.get("spt", {})))
-    
+
     obs_tdg_spt = datos.get("obs_tdg_spt", "")
     if obs_tdg_spt:
         add_block(bloque_obs_tdg_spt_pdf(obs_tdg_spt))
-    
+
     add_block(bloque_power_baterias_pdf(datos.get("power", {})))
     add_block(bloque_planta_electrica_pdf(datos.get("planta", {})))
     add_block(bloque_transferencia_pdf(datos.get("ats", {})))
@@ -1312,16 +1398,14 @@ def generar_pdf_completo(datos, output_filename="formato_mantenimiento.pdf"):
     add_block(bloque_transporte_optico(datos.get("transporte_optico", {})))
     add_block(bloque_infraestructura_pdf(datos.get("infraestructura", {})))
     add_block(bloque_correctivos_pdf(datos.get("correctivos", {})))
-    
-    # Observaciones generales
-    observaciones = datos.get("observaciones", "")
-    if observaciones:
-        add_block(bloque_observaciones_pdf(observaciones))
 
-    story.append(Spacer(1, 12))
-    story.append(Paragraph(f"Documento generado: {fecha_hora_actual()}", styles["Italic"]))
+    # 🔚 Observaciones generales (si existen)
+    if "observaciones" in datos:
+        add_block(bloque_observaciones_pdf(datos["observaciones"]))
 
+    # 🧾 Generar el documento
     doc.build(story)
+
 
 
 
