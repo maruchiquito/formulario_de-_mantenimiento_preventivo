@@ -1658,18 +1658,17 @@ with st.expander("📝 OBSERVACIONES TDG - SPT", expanded=False):
 with st.expander("🔋 POWER - BATERÍAS", expanded=False):
     power = {}
 
-    for i in range(1, 4):
+    for i in range(1, 3 + 1):
         st.subheader(f"🔋 POWER.{i}")
         power[f"Power {i}"] = {
             "Tipo Power": st.text_input(f"Power {i} - Tipo", key=f"p{i}_tipo"),
-            # Autocompletado Marca (selectbox searchable)
-            "Marca Power": st.selectbox(
-                f"Power {i} - Marca", marcas_power, key=f"p{i}_marca"
-            ),
-            # Autocompletado Tipo de Baterías (selectbox searchable)
-            "Tipo de baterías": st.selectbox(
-                f"Power {i} - Tipo de baterías", tipos_baterias, key=f"p{i}_tipo_bat"
-            ),
+
+            # 🔹 CAMBIO: ahora es campo libre, ya no selectbox
+            "Marca Power": st.text_input(f"Power {i} - Marca", key=f"p{i}_marca"),
+
+            # 🔹 CAMBIO: también es campo libre
+            "Tipo de baterías": st.text_input(f"Power {i} - Tipo de baterías", key=f"p{i}_tipo_bat"),
+
             "Cantidad de Bancos de Baterías": st.number_input(
                 f"Power {i} - Cantidad Bancos", min_value=0, key=f"p{i}_bancos"
             ),
