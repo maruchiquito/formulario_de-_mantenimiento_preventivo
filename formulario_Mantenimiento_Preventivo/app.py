@@ -1375,7 +1375,10 @@ from pathlib import Path
 # -------------------------
 # CONFIG / CARGA IMAGEN
 # -------------------------
-IMAGE_PATH = "img.png"  # asegúrate de que esté junto a tu app.py
+from pathlib import Path
+
+BASE_DIR = Path(__file__).parent
+IMAGE_PATH = BASE_DIR / "img.png"
 
 def _img_to_base64(path):
     p = Path(path)
@@ -1385,6 +1388,7 @@ def _img_to_base64(path):
     return base64.b64encode(data).decode()
 
 img_b64 = _img_to_base64(IMAGE_PATH)
+
 
 # -------------------------
 # CONFIGURACIÓN DE PÁGINA
@@ -1489,7 +1493,7 @@ else:
     </style>
     """
 
-st.markdown(banner_css, unsafe_allow_html=True)
+st.markdown(banner_css, unsafe_allow_html=True) 
 
 # -------------------------
 # RENDER DEL BANNER
